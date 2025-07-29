@@ -53,8 +53,8 @@ impl SourceMapDecoder {
                 }
 
                 // Use sourcemap crate's parse_vlq_segment function
-                let decoded_values = parse_vlq_segment(segment)
-                    .map_err(|e| format!("VLQ decode error: {:?}", e))?;
+                let decoded_values =
+                    parse_vlq_segment(segment).map_err(|e| format!("VLQ decode error: {e:?}"))?;
 
                 if decoded_values.is_empty() {
                     continue;
@@ -78,8 +78,10 @@ impl SourceMapDecoder {
                     original_line += decoded_values[2];
                     original_column += decoded_values[3];
 
-                    if source_index >= 0 && (source_index as usize) < self.source_map.sources.len() {
-                        mapping_segment.source = Some(self.source_map.sources[source_index as usize].clone());
+                    if source_index >= 0 && (source_index as usize) < self.source_map.sources.len()
+                    {
+                        mapping_segment.source =
+                            Some(self.source_map.sources[source_index as usize].clone());
                     }
 
                     mapping_segment.original_line = original_line as u32;
@@ -89,7 +91,8 @@ impl SourceMapDecoder {
                     if decoded_values.len() >= 5 {
                         name_index += decoded_values[4];
                         if name_index >= 0 && (name_index as usize) < self.source_map.names.len() {
-                            mapping_segment.name = Some(self.source_map.names[name_index as usize].clone());
+                            mapping_segment.name =
+                                Some(self.source_map.names[name_index as usize].clone());
                         }
                     }
                 }
@@ -125,13 +128,17 @@ pub struct MappingSegment {
 }
 
 /// Get mapping from source map for a generated location
-pub fn get_mapping(source_map: &SourceMap, generated_location: &Location, _orig_file: &str) -> Option<Mapping> {
+pub fn get_mapping(
+    source_map: &SourceMap,
+    generated_location: &Location,
+    _orig_file: &str,
+) -> Option<Mapping> {
     if source_map.sources.is_empty() {
         return None;
     }
 
     let decoder = SourceMapDecoder::new(source_map.clone());
-    
+
     // Get mapping for start position
     let start_pos = decoder.get_original_position(
         generated_location.start.line,
@@ -139,10 +146,8 @@ pub fn get_mapping(source_map: &SourceMap, generated_location: &Location, _orig_
     )?;
 
     // Get mapping for end position
-    let end_pos = decoder.get_original_position(
-        generated_location.end.line,
-        generated_location.end.column,
-    )?;
+    let end_pos = decoder
+        .get_original_position(generated_location.end.line, generated_location.end.column)?;
 
     // Ensure both positions map to the same source
     if start_pos.source != end_pos.source {
@@ -168,4 +173,3 @@ pub fn get_mapping(source_map: &SourceMap, generated_location: &Location, _orig_
 fn relative_to(source: &str, _orig_file: &str) -> String {
     source.to_string()
 }
-

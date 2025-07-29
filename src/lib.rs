@@ -2,9 +2,9 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+pub mod ffi;
 pub mod sourcemap;
 pub mod transformer;
-pub mod ffi;
 
 pub use sourcemap::*;
 pub use transformer::*;
@@ -65,8 +65,8 @@ pub struct FileCoverage {
     pub fn_map: HashMap<String, FunctionMeta>,
     #[serde(rename = "branchMap")]
     pub branch_map: HashMap<String, BranchMeta>,
-    pub s: HashMap<String, u32>, // statement hits
-    pub f: HashMap<String, u32>, // function hits
+    pub s: HashMap<String, u32>,      // statement hits
+    pub f: HashMap<String, u32>,      // function hits
     pub b: HashMap<String, Vec<u32>>, // branch hits
     #[serde(rename = "inputSourceMap", skip_serializing_if = "Option::is_none")]
     pub input_source_map: Option<SourceMap>,

@@ -1,11 +1,11 @@
+use crate::transform_istanbul_coverage;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-use crate::transform_istanbul_coverage;
 
 /// Transform Istanbul coverage data (C FFI interface)
-/// 
+///
 /// # Safety
-/// 
+///
 /// This function is unsafe because it dereferences raw pointers.
 /// The caller must ensure that:
 /// - `input` is a valid null-terminated C string
@@ -22,20 +22,18 @@ pub unsafe extern "C" fn transform_coverage_ffi(input: *const c_char) -> *mut c_
     };
 
     match transform_istanbul_coverage(c_str) {
-        Ok(result) => {
-            match CString::new(result) {
-                Ok(c_string) => c_string.into_raw(),
-                Err(_) => std::ptr::null_mut(),
-            }
-        }
+        Ok(result) => match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        },
         Err(_) => std::ptr::null_mut(),
     }
 }
 
 /// Free a string allocated by the library
-/// 
+///
 /// # Safety
-/// 
+///
 /// This function is unsafe because it takes ownership of a raw pointer.
 /// The caller must ensure that:
 /// - `ptr` was allocated by this library

@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 /// Source map store for managing transformations
 pub struct SourceMapStore {
+    #[allow(dead_code)]
     base_dir: Option<String>,
     data: HashMap<String, SourceMap>,
 }
@@ -45,7 +46,7 @@ impl SourceMapStore {
             if let Some(source_map) = &fc.input_source_map {
                 let changed = transformer.process_file(&fc, source_map, &mut unique_files);
                 if !changed {
-                    println!("File [{}] ignored, nothing could be mapped", file_path);
+                    println!("File [{file_path}] ignored, nothing could be mapped");
                 }
             } else {
                 let key = get_unique_key(&file_path);
@@ -77,7 +78,12 @@ impl SourceMapTransformer {
     }
 
     /// Process a single file's coverage data
-    pub fn process_file(&self, fc: &FileCoverage, source_map: &SourceMap, unique_files: &mut HashMap<String, MappedCoverage>) -> bool {
+    pub fn process_file(
+        &self,
+        fc: &FileCoverage,
+        source_map: &SourceMap,
+        unique_files: &mut HashMap<String, MappedCoverage>,
+    ) -> bool {
         let mut changes = 0;
 
         // Process statements
@@ -89,7 +95,10 @@ impl SourceMapTransformer {
                 if !unique_files.contains_key(&key) {
                     unique_files.insert(key.clone(), MappedCoverage::new(mapping.source.clone()));
                 }
-                unique_files.get_mut(&key).unwrap().add_statement(mapping.loc, hits);
+                unique_files
+                    .get_mut(&key)
+                    .unwrap()
+                    .add_statement(mapping.loc, hits);
             }
         }
 
@@ -104,7 +113,8 @@ impl SourceMapTransformer {
                     changes += 1;
                     let key = get_unique_key(&mapping.source);
                     if !unique_files.contains_key(&key) {
-                        unique_files.insert(key.clone(), MappedCoverage::new(mapping.source.clone()));
+                        unique_files
+                            .insert(key.clone(), MappedCoverage::new(mapping.source.clone()));
                     }
                     unique_files.get_mut(&key).unwrap().add_function(
                         fn_meta.name.clone(),
@@ -139,11 +149,12 @@ impl SourceMapTransformer {
                 }
             }
 
-            let loc_mapping = if branch_meta.loc.start.line != 0 || branch_meta.loc.start.column != 0 {
-                get_mapping(source_map, &branch_meta.loc, &fc.path)
-            } else {
-                None
-            };
+            let loc_mapping =
+                if branch_meta.loc.start.line != 0 || branch_meta.loc.start.column != 0 {
+                    get_mapping(source_map, &branch_meta.loc, &fc.path)
+                } else {
+                    None
+                };
 
             if !skip && !locs.is_empty() {
                 if let Some(source) = source {
@@ -225,7 +236,7 @@ impl MappedCoverage {
     /// Add statement to mapped coverage
     pub fn add_statement(&mut self, loc: Location, hits: u32) -> usize {
         let key = format!("s:{}", loc_string(&loc));
-        
+
         if let Some(&index) = self.meta.seen.get(&key) {
             let index_str = index.to_string();
             *self.file_coverage.s.entry(index_str).or_insert(0) += hits;
@@ -234,18 +245,26 @@ impl MappedCoverage {
             let index = self.meta.last.s;
             self.meta.last.s += 1;
             self.meta.seen.insert(key, index);
-            
+
             let index_str = index.to_string();
-            self.file_coverage.statement_map.insert(index_str.clone(), loc);
+            self.file_coverage
+                .statement_map
+                .insert(index_str.clone(), loc);
             self.file_coverage.s.insert(index_str, hits);
             index
         }
     }
 
     /// Add function to mapped coverage
-    pub fn add_function(&mut self, name: String, decl: Location, loc: Location, hits: u32) -> usize {
+    pub fn add_function(
+        &mut self,
+        name: String,
+        decl: Location,
+        loc: Location,
+        hits: u32,
+    ) -> usize {
         let key = format!("f:{}", loc_string(&decl));
-        
+
         if let Some(&index) = self.meta.seen.get(&key) {
             let index_str = index.to_string();
             *self.file_coverage.f.entry(index_str).or_insert(0) += hits;
@@ -254,14 +273,14 @@ impl MappedCoverage {
             let index = self.meta.last.f;
             self.meta.last.f += 1;
             self.meta.seen.insert(key, index);
-            
+
             let index_str = index.to_string();
             let fn_name = if name.is_empty() {
-                format!("(unknown_{})", index)
+                format!("(unknown_{index})")
             } else {
                 name
             };
-            
+
             self.file_coverage.fn_map.insert(
                 index_str.clone(),
                 FunctionMeta {
@@ -303,7 +322,7 @@ impl MappedCoverage {
             let index = self.meta.last.b;
             self.meta.last.b += 1;
             self.meta.seen.insert(key, index);
-            
+
             let index_str = index.to_string();
             self.file_coverage.branch_map.insert(
                 index_str.clone(),

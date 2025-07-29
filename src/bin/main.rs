@@ -1,5 +1,4 @@
 use istanbul_sourcemap::{transform_istanbul_coverage, CoverageMap, SourceMapStore};
-use serde_json;
 
 fn main() -> anyhow::Result<()> {
     // 示例Istanbul覆盖率数据
@@ -50,7 +49,7 @@ fn main() -> anyhow::Result<()> {
     // 使用便捷函数转换
     println!("\n使用便捷函数转换:");
     let result = transform_istanbul_coverage(istanbul_data)?;
-    println!("{}", result);
+    println!("{result}");
 
     // 使用SourceMapStore转换
     println!("\n使用SourceMapStore转换:");
@@ -60,14 +59,14 @@ fn main() -> anyhow::Result<()> {
 
     let json_result = serde_json::to_string_pretty(&transformed_map)?;
     println!("\nJSON格式输出:");
-    println!("{}", json_result);
+    println!("{json_result}");
 
     Ok(())
 }
 
 fn print_coverage_map(coverage_map: &CoverageMap) {
     for (file_path, fc) in coverage_map {
-        println!("文件: {}", file_path);
+        println!("文件: {file_path}");
         println!("  语句覆盖: {:?}", fc.s);
         println!("  函数覆盖: {:?}", fc.f);
         println!("  分支覆盖: {:?}", fc.b);

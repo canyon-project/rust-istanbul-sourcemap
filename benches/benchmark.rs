@@ -63,9 +63,7 @@ fn benchmark_transform_coverage(c: &mut Criterion) {
     }"#;
 
     c.bench_function("transform_istanbul_coverage", |b| {
-        b.iter(|| {
-            transform_istanbul_coverage(black_box(test_data)).unwrap()
-        })
+        b.iter(|| transform_istanbul_coverage(black_box(test_data)).unwrap())
     });
 
     let coverage_map: CoverageMap = serde_json::from_str(test_data).unwrap();
@@ -73,7 +71,9 @@ fn benchmark_transform_coverage(c: &mut Criterion) {
 
     c.bench_function("source_map_store_transform", |b| {
         b.iter(|| {
-            store.transform_coverage(black_box(coverage_map.clone())).unwrap()
+            store
+                .transform_coverage(black_box(coverage_map.clone()))
+                .unwrap()
         })
     });
 }

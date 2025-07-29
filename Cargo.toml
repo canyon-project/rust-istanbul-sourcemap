@@ -5,7 +5,15 @@ edition = "2021"
 
 [lib]
 name = "istanbul_sourcemap"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "istanbul-sourcemap"
+path = "src/bin/main.rs"
+
+[[bin]]
+name = "example"
+path = "src/bin/example.rs"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
