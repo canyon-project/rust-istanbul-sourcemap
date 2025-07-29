@@ -1,4 +1,5 @@
 use crate::{Location, Mapping, Position, SourceMap};
+use sourcemap::vlq::parse_vlq_segment;
 
 /// Source map decoder for handling VLQ mappings
 pub struct SourceMapDecoder {
@@ -26,17 +27,17 @@ impl SourceMapDecoder {
         })
     }
 
-    /// Parse VLQ mappings (simplified version)
+    /// Parse VLQ mappings using sourcemap crate's VLQ decoder
     pub fn parse_mappings(&self) -> Result<Vec<Vec<MappingSegment>>, Box<dyn std::error::Error>> {
         let lines: Vec<&str> = self.source_map.mappings.split(';').collect();
         let mut result = Vec::with_capacity(lines.len());
 
         // State variables for VLQ decoding
-        let mut generated_column = 0i32;
-        let mut source_index = 0i32;
-        let mut original_line = 0i32;
-        let mut original_column = 0i32;
-        let mut name_index = 0i32;
+        let mut generated_column = 0i64;
+        let mut source_index = 0i64;
+        let mut original_line = 0i64;
+        let mut original_column = 0i64;
+        let mut name_index = 0i64;
 
         for (line_index, line) in lines.iter().enumerate() {
             if line_index > 0 {
@@ -51,12 +52,16 @@ impl SourceMapDecoder {
                     continue;
                 }
 
-                let mut index = 0;
-                
-                // Decode generated column
-                let (gen_col, new_index) = decode_vlq(segment, index)?;
-                index = new_index;
-                generated_column += gen_col;
+                // Use sourcemap crate's parse_vlq_segment function
+                let decoded_values = parse_vlq_segment(segment)
+                    .map_err(|e| format!("VLQ decode error: {:?}", e))?;
+
+                if decoded_values.is_empty() {
+                    continue;
+                }
+
+                // Update generated column
+                generated_column += decoded_values[0];
 
                 let mut mapping_segment = MappingSegment {
                     generated_line: line_index as u32,
@@ -67,35 +72,24 @@ impl SourceMapDecoder {
                     name: None,
                 };
 
-                // If there's more data, decode source information
-                if index < segment.len() {
-                    let (src_idx, new_index) = decode_vlq(segment, index)?;
-                    index = new_index;
-                    source_index += src_idx;
+                // If there's source information (at least 4 values)
+                if decoded_values.len() >= 4 {
+                    source_index += decoded_values[1];
+                    original_line += decoded_values[2];
+                    original_column += decoded_values[3];
 
                     if source_index >= 0 && (source_index as usize) < self.source_map.sources.len() {
                         mapping_segment.source = Some(self.source_map.sources[source_index as usize].clone());
                     }
 
-                    // Decode original line
-                    let (orig_line, new_index) = decode_vlq(segment, index)?;
-                    index = new_index;
-                    original_line += orig_line;
                     mapping_segment.original_line = original_line as u32;
-
-                    // Decode original column
-                    let (orig_col, new_index) = decode_vlq(segment, index)?;
-                    index = new_index;
-                    original_column += orig_col;
                     mapping_segment.original_column = original_column as u32;
 
-                    // If there's a name index
-                    if index < segment.len() {
-                        if let Ok((name_idx, _)) = decode_vlq(segment, index) {
-                            name_index += name_idx;
-                            if name_index >= 0 && (name_index as usize) < self.source_map.names.len() {
-                                mapping_segment.name = Some(self.source_map.names[name_index as usize].clone());
-                            }
+                    // If there's a name index (5th value)
+                    if decoded_values.len() >= 5 {
+                        name_index += decoded_values[4];
+                        if name_index >= 0 && (name_index as usize) < self.source_map.names.len() {
+                            mapping_segment.name = Some(self.source_map.names[name_index as usize].clone());
                         }
                     }
                 }
@@ -175,47 +169,3 @@ fn relative_to(source: &str, _orig_file: &str) -> String {
     source.to_string()
 }
 
-/// VLQ decoding constants
-const VLQ_BASE_SHIFT: u32 = 5;
-const VLQ_BASE: u32 = 1 << VLQ_BASE_SHIFT;
-const VLQ_BASE_MASK: u32 = VLQ_BASE - 1;
-const VLQ_CONTINUATION_BIT: u32 = VLQ_BASE;
-
-/// Base64 character mapping
-fn get_base64_value(c: char) -> Result<u32, Box<dyn std::error::Error>> {
-    match c {
-        'A'..='Z' => Ok(c as u32 - 'A' as u32),
-        'a'..='z' => Ok(c as u32 - 'a' as u32 + 26),
-        '0'..='9' => Ok(c as u32 - '0' as u32 + 52),
-        '+' => Ok(62),
-        '/' => Ok(63),
-        _ => Err(format!("Invalid base64 character: {}", c).into()),
-    }
-}
-
-/// Decode VLQ encoded integer
-fn decode_vlq(mappings: &str, mut index: usize) -> Result<(i32, usize), Box<dyn std::error::Error>> {
-    let mut result = 0u32;
-    let mut shift = 0u32;
-    let mut continuation = true;
-
-    while continuation && index < mappings.len() {
-        let c = mappings.chars().nth(index).unwrap();
-        let value = get_base64_value(c)?;
-        
-        continuation = (value & VLQ_CONTINUATION_BIT) != 0;
-        let masked_value = value & VLQ_BASE_MASK;
-        result += masked_value << shift;
-        shift += VLQ_BASE_SHIFT;
-        index += 1;
-    }
-
-    // Handle sign bit
-    let final_result = if (result & 1) == 1 {
-        -((result >> 1) as i32)
-    } else {
-        (result >> 1) as i32
-    };
-
-    Ok((final_result, index))
-}
