@@ -150,10 +150,10 @@ fn print_transformation_stats(coverage_map: &CoverageMap) {
     let total_files = coverage_map.len();
     let original_sources: std::collections::HashSet<_> = coverage_map.keys().collect();
 
-    println!("总文件数: {}", total_files);
+    println!("总文件数: {total_files}");
     println!("转换后的源文件:");
     for source in original_sources {
-        println!("  - {}", source);
+        println!("  - {source}");
     }
 
     let total_statements: usize = coverage_map.values().map(|fc| fc.statement_map.len()).sum();
@@ -161,7 +161,7 @@ fn print_transformation_stats(coverage_map: &CoverageMap) {
     let total_branches: usize = coverage_map.values().map(|fc| fc.branch_map.len()).sum();
 
     println!("总计:");
-    println!("  语句: {}", total_statements);
-    println!("  函数: {}", total_functions);
-    println!("  分支: {}", total_branches);
+    println!("  语句: {total_statements}");
+    println!("  函数: {total_functions}");
+    println!("  分支: {total_branches}");
 }
