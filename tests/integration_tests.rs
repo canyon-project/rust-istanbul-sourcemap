@@ -1,6 +1,4 @@
 use istanbul_sourcemap::*;
-use serde_json;
-
 
 #[test]
 fn test_transform_coverage_with_source_map() {
