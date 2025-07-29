@@ -1,6 +1,6 @@
 use istanbul_sourcemap::*;
 use serde_json;
-use std::collections::HashMap;
+
 
 #[test]
 fn test_transform_coverage_with_source_map() {

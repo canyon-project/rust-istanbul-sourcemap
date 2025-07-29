@@ -66,7 +66,7 @@ func downloadLibrary() error {
 
 	// Download URL (you'll need to update this with your actual GitHub repo)
 	downloadURL := fmt.Sprintf("https://github.com/%s/releases/latest/download/%s", githubRepo, libName)
-	
+
 	// Determine local library name
 	var localLibName string
 	switch runtime.GOOS {
