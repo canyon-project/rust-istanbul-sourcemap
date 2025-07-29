@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 pub mod sourcemap;
 pub mod transformer;
+pub mod ffi;
 
 pub use sourcemap::*;
 pub use transformer::*;

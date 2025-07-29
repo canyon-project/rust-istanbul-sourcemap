@@ -202,6 +202,94 @@ cargo test test_transform_coverage_with_source_map
 4. 插件系统
 5. CLI工具
 
+## 多语言支持
+
+这个项目支持多种使用方式：
+
+### Go语言包 (推荐)
+
+直接使用Go包管理器安装：
+
+```bash
+go get github.com/canyon-project/rust-istanbul-sourcemap
+```
+
+使用方法：
+
+```go
+import istanbul "github.com/canyon-project/rust-istanbul-sourcemap"
+
+ism := istanbul.New()
+result, err := ism.TransformCoverage(coverageData)
+```
+
+详细文档请查看 [Go README](GO_README.md)
+
+### 命令行工具
+
+#### Homebrew (macOS/Linux)
+
+```bash
+brew install canyon-project/tap/istanbul-sourcemap-go
+```
+
+#### 直接下载
+
+从 [Releases](https://github.com/canyon-project/rust-istanbul-sourcemap/releases) 页面下载对应平台的二进制文件。
+
+#### 使用
+
+```bash
+# 从文件转换
+istanbul-sourcemap-go -input coverage.json -output transformed.json
+
+# 从stdin转换
+cat coverage.json | istanbul-sourcemap-go
+```
+
+## 构建动态库
+
+这个项目支持构建为动态库(.so/.dylib/.dll)供其他语言调用。
+
+### 本地构建
+
+```bash
+# 构建动态库
+make build-rust
+
+# 构建并运行Go示例
+make build-go
+
+# 清理构建产物
+make clean
+```
+
+### GitHub Action自动构建
+
+项目配置了GitHub Action，会自动构建多平台的动态库：
+
+- Linux (x86_64, ARM64)
+- macOS (x86_64, ARM64) 
+- Windows (x86_64)
+
+当你推送代码或创建tag时，GitHub Action会自动构建并上传产物。
+
+### Go语言集成
+
+查看 `examples/go/` 目录了解如何在Go中使用这个库：
+
+```go
+import "C"
+
+func TransformCoverage(input string) (string, error) {
+    // 调用Rust库
+    result, err := C.transform_coverage_ffi(input)
+    return result, err
+}
+```
+
+详细说明请参考 [Go示例文档](examples/go/README.md)。
+
 ## 贡献
 
 欢迎提交Issue和Pull Request！
@@ -217,3 +305,5 @@ MIT License
 - 基本的source map转换功能
 - 完整的测试套件
 - 文档和示例
+- 支持构建动态库供Go调用
+- GitHub Action自动构建多平台产物
